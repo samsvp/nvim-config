@@ -35,6 +35,7 @@ I hope you enjoy your Neovim journey,
 
 P.S. You can delete this when you're done too. It's your config now :)
 --]]
+
 -- Set <space> as the leader key
 -- See `:help mapleader`
 --  NOTE: Must happen before plugins are required (otherwise wrong leader will be used)
@@ -56,6 +57,11 @@ if not vim.loop.fs_stat(lazypath) then
   }
 end
 vim.opt.rtp:prepend(lazypath)
+
+vim.o.tabstop = 4 -- A TAB character looks like 4 spaces
+vim.o.expandtab = true -- Pressing the TAB key will insert spaces instead of a TAB character
+vim.o.softtabstop = 4 -- Number of spaces inserted instead of a TAB character
+vim.o.shiftwidth = 4 -- Number of spaces inserted when indenting
 
 -- NOTE: Here is where you install your plugins.
 --  You can configure plugins using the `config` key.
@@ -91,6 +97,23 @@ require('lazy').setup({
     },
   },
 
+
+  {
+    "windwp/nvim-autopairs",
+    -- Optional dependency
+    dependencies = { 'hrsh7th/nvim-cmp' },
+    config = function()
+      require("nvim-autopairs").setup {}
+      -- If you want to automatically add `(` after selecting a function or method
+      local cmp_autopairs = require('nvim-autopairs.completion.cmp')
+      local cmp = require('cmp')
+      cmp.event:on(
+        'confirm_done',
+        cmp_autopairs.on_confirm_done()
+      )
+    end,
+  },
+  
   {
     -- Autocompletion
     'hrsh7th/nvim-cmp',
@@ -153,6 +176,19 @@ require('lazy').setup({
   },
 
   {
+    "nvim-neo-tree/neo-tree.nvim",
+    version = "*",
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+      "nvim-tree/nvim-web-devicons", -- not strictly required, but recommended
+      "MunifTanjim/nui.nvim",
+    },
+    config = function ()
+      require('neo-tree').setup {}
+    end,
+  },
+  
+  {
     -- Add indentation guides even on blank lines
     'lukas-reineke/indent-blankline.nvim',
     -- Enable `lukas-reineke/indent-blankline.nvim`
@@ -196,7 +232,6 @@ require('lazy').setup({
   --       Uncomment any of the lines below to enable them.
   -- require 'kickstart.plugins.autoformat',
   -- require 'kickstart.plugins.debug',
-
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    You can use this folder to prevent any conflicts with this init.lua if you're interested in keeping
   --    up-to-date with whatever is in the kickstart repo.
@@ -281,6 +316,7 @@ require('telescope').setup {
     },
   },
 }
+
 
 -- Enable telescope fzf native, if installed
 pcall(require('telescope').load_extension, 'fzf')
@@ -511,6 +547,20 @@ cmp.setup {
     { name = 'luasnip' },
   },
 }
+
+vim.api.nvim_create_autocmd({"BufRead", "BufNewFile"}, {
+    pattern = {"*.fs", "*.vs"},
+    command = "set filetype=glsl"
+})
+
+vim.api.nvim_create_autocmd({"BufRead", "BufNewFile"}, {
+    pattern = {"*.c", "*.h"},
+    command = "set filetype=c"
+})
+
+local keymap = vim.api.nvim_set_keymap
+local opts = { noremap = true, silent = true }
+keymap("n", "<leader>rn", "<cmd>lua vim.lsp.buf.rename()<CR>", opts)
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
