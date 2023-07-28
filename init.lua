@@ -562,5 +562,7 @@ local keymap = vim.api.nvim_set_keymap
 local opts = { noremap = true, silent = true }
 keymap("n", "<leader>rn", "<cmd>lua vim.lsp.buf.rename()<CR>", opts)
 
+vim.opt.spelllang = 'en_us'
+vim.opt.spell = true
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
