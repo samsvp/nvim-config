@@ -41,7 +41,6 @@ P.S. You can delete this when you're done too. It's your config now :)
 --  NOTE: Must happen before plugins are required (otherwise wrong leader will be used)
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
-
 -- local vimrc = vim.fn.stdpath("config") .. "/vimrc.vim"
 -- vim.cmd.source(vimrc)
 
@@ -187,7 +186,14 @@ require('lazy').setup({
       "MunifTanjim/nui.nvim",
     },
     config = function ()
-      require('neo-tree').setup {}
+      require('neo-tree').setup {
+        filesystem = {
+          filtered_items = {
+            hide_gitignored = false
+          },
+          use_libuv_file_watcher = true
+        }
+      }
     end,
   },
   
@@ -368,7 +374,8 @@ vim.keymap.set('n', '<leader>sd', require('telescope.builtin').diagnostics, { de
 -- See `:help nvim-treesitter`
 require('nvim-treesitter.configs').setup {
   -- Add languages to be installed here that you want installed for treesitter
-  ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'tsx', 'typescript', 'vimdoc', 'vim' },
+  ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 
+    'tsx', 'typescript', 'vimdoc', 'vim' },
 
   -- Autoinstall languages that are not installed. Defaults to false (but you can change for yourself!)
   auto_install = false,
@@ -574,7 +581,7 @@ cmp.setup {
 }
 
 vim.api.nvim_create_autocmd({"BufRead", "BufNewFile"}, {
-    pattern = {"*.fs", "*.vs"},
+    pattern = {"*.fs", "*.vs", "*.frag", "*.vert"},
     command = "set filetype=glsl"
 })
 
@@ -586,9 +593,20 @@ vim.api.nvim_create_autocmd({"BufRead", "BufNewFile"}, {
 local keymap = vim.api.nvim_set_keymap
 local opts = { noremap = true, silent = true }
 keymap("n", "<leader>rn", "<cmd>lua vim.lsp.buf.rename()<CR>", opts)
+keymap("n", "<leader>rn", "<cmd>lua vim.lsp.buf.rename()<CR>", opts)
+keymap("n", "<Up>", "<Nop>", opts)
+keymap("n", "<Left>", "<Nop>", opts)
+keymap("n", "<Right>", "<Nop>", opts)
+keymap("n", "<Down>", "<Nop>", opts)
 
 vim.opt.spelllang = 'en_us'
 vim.opt.spell = true
 
+-- Map Ctrl+hjkl to arrow keys in insert mode
+vim.api.nvim_set_keymap('i', '<C-h>', '<Left>', { noremap = true })
+vim.api.nvim_set_keymap('i', '<C-j>', '<Down>', { noremap = true })
+vim.api.nvim_set_keymap('i', '<C-k>', '<Up>', { noremap = true })
+vim.api.nvim_set_keymap('i', '<C-l>', '<Right>', { noremap = true })
+vim.cmd('set clipboard+=unnamedplus')
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
