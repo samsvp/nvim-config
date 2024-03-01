@@ -593,16 +593,8 @@ vim.api.nvim_create_autocmd({"BufRead", "BufNewFile"}, {
 
 local trim_group = vim.api.nvim_create_augroup('TrimWhiteSpaces', { clear = true })
 vim.api.nvim_create_autocmd({"BufWritePre"}, {
-  vim.api.nvim_create_autocmd({"BufWriteCmd", }, {
-    group = trim_group,
-    pattern = "*",
-    callback = function()
-      local cursor = vim.api.nvim_win_get_cursor(0)
-      local command = "%s/\\s\\+$//e"
-      vim.cmd(command)
-      vim.api.nvim_win_set_cursor(0, cursor)
-    end,
-  })
+    pattern = { "*" },
+    command = [[%s/\s\+$//e]],
 })
 
 local keymap = vim.api.nvim_set_keymap
