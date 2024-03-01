@@ -591,7 +591,6 @@ vim.api.nvim_create_autocmd({"BufRead", "BufNewFile"}, {
 })
 
 
-local trim_group = vim.api.nvim_create_augroup('TrimWhiteSpaces', { clear = true })
 vim.api.nvim_create_autocmd({"BufWritePre"}, {
     pattern = { "*" },
     command = [[%s/\s\+$//e]],
