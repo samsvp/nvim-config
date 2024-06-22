@@ -76,6 +76,7 @@ require('lazy').setup({
   -- Git related plugins
   'tpope/vim-fugitive',
   'tpope/vim-rhubarb',
+  'adelarsq/neofsharp.vim',
 
   -- Detect tabstop and shiftwidth automatically
   'tpope/vim-sleuth',
@@ -605,7 +606,7 @@ keymap("n", "<Left>", "<Nop>", opts)
 keymap("n", "<Right>", "<Nop>", opts)
 keymap("n", "<Down>", "<Nop>", opts)
 
-vim.opt.spelllang = 'en_us'
+vim.opt.spelllang = 'en_us,pt_br'
 vim.opt.spell = true
 vim.api.nvim_set_option("clipboard","unnamedplus")
 
@@ -617,3 +618,21 @@ vim.api.nvim_set_keymap('i', '<C-l>', '<Right>', { noremap = true })
 vim.cmd('set clipboard+=unnamedplus')
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
+
+local parser_config = require "nvim-treesitter.parsers".get_parser_configs()
+parser_config.fsharp = {
+  install_info = {
+    url = "https://github.com/Nsidorenco/tree-sitter-fsharp",
+    branch = "develop",
+    files = {"src/scanner.cc", "src/parser.c" },
+    generate_requires_npm = true,
+    requires_generate_from_grammar = true
+  },
+  filetype = "fsharp",
+}
+
+vim.api.nvim_create_autocmd({"BufRead", "BufNewFile"}, {
+    pattern = {"*.fs"},
+    command = "set filetype=fsharp"
+})
+
