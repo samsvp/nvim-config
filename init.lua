@@ -198,6 +198,8 @@ require('lazy').setup({
     end,
   },
 
+  {"mbbill/undotree", config = function() end, opts = {}},
+
   { "lukas-reineke/indent-blankline.nvim", main = "ibl", opts = {} },
 
   {
@@ -627,3 +629,4 @@ vim.api.nvim_create_autocmd({"BufRead", "BufNewFile"}, {
     command = "set filetype=fsharp"
 })
 
+vim.keymap.set('n', '<leader>u', vim.cmd.UndotreeToggle)
