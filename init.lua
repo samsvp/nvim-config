@@ -199,6 +199,7 @@ require('lazy').setup({
   },
 
   {"mbbill/undotree", config = function() end, opts = {}},
+  {"hiphish/rainbow-delimiters.nvim", config = function() end, opts = {}},
 
   { "lukas-reineke/indent-blankline.nvim", main = "ibl", opts = {} },
 
@@ -369,7 +370,7 @@ vim.keymap.set('n', '<leader>sd', require('telescope.builtin').diagnostics, { de
 require('nvim-treesitter.configs').setup {
   -- Add languages to be installed here that you want installed for treesitter
   ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'c_sharp',
-    'tsx', 'typescript', 'vimdoc', 'vim', 'gleam', 'erlang' },
+    'tsx', 'typescript', 'vimdoc', 'vim', 'gleam', 'erlang', 'zig' },
 
   -- Autoinstall languages that are not installed. Defaults to false (but you can change for yourself!)
   auto_install = false,
@@ -429,6 +430,36 @@ require('nvim-treesitter.configs').setup {
       },
     },
   },
+}
+
+
+-- [[ Configure Brackets Rainbow ]]
+-- This module contains a number of default definitions
+local rainbow_delimiters = require 'rainbow-delimiters'
+
+---@type rainbow_delimiters.config
+vim.g.rainbow_delimiters = {
+    strategy = {
+        [''] = rainbow_delimiters.strategy['global'],
+        vim = rainbow_delimiters.strategy['local'],
+    },
+    query = {
+        [''] = 'rainbow-delimiters',
+        lua = 'rainbow-blocks',
+    },
+    priority = {
+        [''] = 110,
+        lua = 210,
+    },
+    highlight = {
+        'RainbowDelimiterRed',
+        'RainbowDelimiterYellow',
+        'RainbowDelimiterBlue',
+        'RainbowDelimiterOrange',
+        'RainbowDelimiterGreen',
+        'RainbowDelimiterViolet',
+        'RainbowDelimiterCyan',
+    },
 }
 
 -- Diagnostic keymaps
