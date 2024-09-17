@@ -80,6 +80,11 @@ require('lazy').setup({
 
   -- Detect tabstop and shiftwidth automatically
   'tpope/vim-sleuth',
+  {
+    "scottmckendry/cyberdream.nvim",
+    lazy = false,
+    priority = 1000,
+  },
 
   -- NOTE: This is where your plugins related to LSP can be installed.
   --  The configuration is done below. Search for lspconfig to find it below.
@@ -99,7 +104,6 @@ require('lazy').setup({
       'folke/neodev.nvim',
     },
   },
-
 
   {
     "windwp/nvim-autopairs",
@@ -370,7 +374,7 @@ vim.keymap.set('n', '<leader>sd', require('telescope.builtin').diagnostics, { de
 require('nvim-treesitter.configs').setup {
   -- Add languages to be installed here that you want installed for treesitter
   ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'c_sharp',
-    'tsx', 'typescript', 'vimdoc', 'vim', 'gleam', 'erlang', 'zig' },
+    'tsx', 'typescript', 'vimdoc', 'vim', 'gleam', 'erlang', 'zig', 'glsl' },
 
   -- Autoinstall languages that are not installed. Defaults to false (but you can change for yourself!)
   auto_install = false,
@@ -439,28 +443,28 @@ local rainbow_delimiters = require 'rainbow-delimiters'
 
 ---@type rainbow_delimiters.config
 vim.g.rainbow_delimiters = {
-    strategy = {
-        [''] = rainbow_delimiters.strategy['global'],
-        vim = rainbow_delimiters.strategy['local'],
-        zig = rainbow_delimiters.strategy['noop'],
-    },
-    query = {
-        [''] = 'rainbow-delimiters',
-        lua = 'rainbow-blocks',
-    },
-    priority = {
-        [''] = 110,
-        lua = 210,
-    },
-    highlight = {
-        'RainbowDelimiterRed',
-        'RainbowDelimiterYellow',
-        'RainbowDelimiterBlue',
-        'RainbowDelimiterOrange',
-        'RainbowDelimiterGreen',
-        'RainbowDelimiterViolet',
-        'RainbowDelimiterCyan',
-    },
+  strategy = {
+    [''] = rainbow_delimiters.strategy['global'],
+    vim = rainbow_delimiters.strategy['local'],
+    zig = rainbow_delimiters.strategy['noop'],
+  },
+  query = {
+    [''] = 'rainbow-delimiters',
+    lua = 'rainbow-blocks',
+  },
+  priority = {
+    [''] = 110,
+    lua = 210,
+  },
+  highlight = {
+    'RainbowDelimiterRed',
+    'RainbowDelimiterYellow',
+    'RainbowDelimiterBlue',
+    'RainbowDelimiterOrange',
+    'RainbowDelimiterGreen',
+    'RainbowDelimiterViolet',
+    'RainbowDelimiterCyan',
+  },
 }
 
 -- Diagnostic keymaps
@@ -607,19 +611,19 @@ cmp.setup {
 }
 
 vim.api.nvim_create_autocmd({"BufRead", "BufNewFile"}, {
-    pattern = {"*.fs", "*.vs", "*.frag", "*.vert"},
-    command = "set filetype=glsl"
+  pattern = {"*.fs", "*.vs", "*.frag", "*.vert"},
+  command = "set filetype=glsl"
 })
 
 vim.api.nvim_create_autocmd({"BufRead", "BufNewFile"}, {
-    pattern = {"*.c", "*.h"},
-    command = "set filetype=c"
+  pattern = {"*.c", "*.h"},
+  command = "set filetype=c"
 })
 
 
 vim.api.nvim_create_autocmd({"BufWritePre"}, {
-    pattern = { "*" },
-    command = [[%s/\s\+$//e]],
+  pattern = { "*" },
+  command = [[%s/\s\+$//e]],
 })
 
 local keymap = vim.api.nvim_set_keymap
@@ -657,8 +661,9 @@ parser_config.fsharp = {
 }
 
 vim.api.nvim_create_autocmd({"BufRead", "BufNewFile"}, {
-    pattern = {"*.fs"},
-    command = "set filetype=fsharp"
+  pattern = {"*.fs"},
+  command = "set filetype=fsharp"
 })
 
 vim.keymap.set('n', '<leader>u', vim.cmd.UndotreeToggle)
+vim.cmd("colorscheme cyberdream")
