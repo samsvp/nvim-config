@@ -85,7 +85,16 @@ require('lazy').setup({
     lazy = false,
     priority = 1000,
   },
-
+  {
+    "monkoose/DoNe",
+    lazy = true,
+    -- optional configuration
+    config = function()
+      -- as example adding some keybindings
+      vim.keymap.set("n", "<F5>", "<Cmd>DoNe build<CR>")
+      --- ...
+    end,
+  },
   -- NOTE: This is where your plugins related to LSP can be installed.
   --  The configuration is done below. Search for lspconfig to find it below.
   {
@@ -374,7 +383,7 @@ vim.keymap.set('n', '<leader>sd', require('telescope.builtin').diagnostics, { de
 require('nvim-treesitter.configs').setup {
   -- Add languages to be installed here that you want installed for treesitter
   ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'c_sharp',
-    'tsx', 'typescript', 'vimdoc', 'vim', 'gleam', 'erlang', 'zig', 'glsl' },
+    'tsx', 'typescript', 'vimdoc', 'vim', 'gleam', 'erlang', 'zig', 'glsl', 'fennel', 'templ' },
 
   -- Autoinstall languages that are not installed. Defaults to false (but you can change for yourself!)
   auto_install = false,
@@ -447,6 +456,7 @@ vim.g.rainbow_delimiters = {
     [''] = rainbow_delimiters.strategy['global'],
     vim = rainbow_delimiters.strategy['local'],
     zig = rainbow_delimiters.strategy['noop'],
+    lua = rainbow_delimiters.strategy['noop'],
   },
   query = {
     [''] = 'rainbow-delimiters',
@@ -532,7 +542,13 @@ local servers = {
 
   lua_ls = {
     Lua = {
-      workspace = { checkThirdParty = false },
+      workspace = {
+        checkThirdParty = false,
+        -- change to your annotations path
+        library = {
+          ["$HOME/.defold/defold_api"] = true,
+        },
+      },
       telemetry = { enable = false },
     },
   },
@@ -611,7 +627,7 @@ cmp.setup {
 }
 
 vim.api.nvim_create_autocmd({"BufRead", "BufNewFile"}, {
-  pattern = {"*.fs", "*.vs", "*.frag", "*.vert"},
+  pattern = {"*.vs", "*.frag", "*.vert"},
   command = "set filetype=glsl"
 })
 
@@ -667,3 +683,10 @@ vim.api.nvim_create_autocmd({"BufRead", "BufNewFile"}, {
 
 vim.keymap.set('n', '<leader>u', vim.cmd.UndotreeToggle)
 vim.cmd("colorscheme cyberdream")
+
+vim.api.nvim_create_autocmd("BufWritePre", {
+  pattern = "*.go",
+  callback = function()
+    vim.cmd([[silent! lua vim.lsp.buf.format()]])
+  end,
+})
