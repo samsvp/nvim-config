@@ -382,8 +382,30 @@ vim.keymap.set('n', '<leader>sd', require('telescope.builtin').diagnostics, { de
 -- See `:help nvim-treesitter`
 require('nvim-treesitter.configs').setup {
   -- Add languages to be installed here that you want installed for treesitter
-  ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'c_sharp', 'javascript',
-    'tsx', 'typescript', 'vimdoc', 'vim', 'gleam', 'erlang', 'zig', 'glsl', 'fennel', 'templ' },
+  ensure_installed = {
+    'c',
+    'cpp',
+    'go',
+    'lua',
+    'python',
+    'rust',
+    'commonlisp',
+    'c_sharp',
+    'javascript',
+    'elixir',
+    'eex',
+    'heex',
+    'tsx',
+    'typescript',
+    'vimdoc',
+    'vim',
+    'gleam',
+    'erlang',
+    'zig',
+    'glsl',
+    'fennel',
+    'templ'
+  },
 
   -- Autoinstall languages that are not installed. Defaults to false (but you can change for yourself!)
   auto_install = false,
@@ -679,6 +701,11 @@ parser_config.fsharp = {
 vim.api.nvim_create_autocmd({"BufRead", "BufNewFile"}, {
   pattern = {"*.fs"},
   command = "set filetype=fsharp"
+})
+
+vim.api.nvim_create_autocmd({"BufRead", "BufNewFile"}, {
+  pattern = {"*.lisp"},
+  command = "set filetype=clojure"
 })
 
 vim.keymap.set('n', '<leader>u', vim.cmd.UndotreeToggle)
