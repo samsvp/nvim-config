@@ -86,6 +86,10 @@ require('lazy').setup({
     priority = 1000,
   },
   {
+    "rebelot/kanagawa.nvim",
+    lazy = false,
+  },
+  {
     "monkoose/DoNe",
     lazy = true,
     -- optional configuration
@@ -250,10 +254,93 @@ require('lazy').setup({
   {
     -- Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
-    dependencies = {
-      'nvim-treesitter/nvim-treesitter-textobjects',
-    },
     build = ':TSUpdate',
+    main = 'nvim-treesitter.config',
+    opts = {
+      -- Add languages to be installed here that you want installed for treesitter
+      ensure_installed = {
+        'c',
+        'cpp',
+        'go',
+        'lua',
+        'python',
+        'rust',
+        'commonlisp',
+        'c_sharp',
+        'javascript',
+        'elixir',
+        'eex',
+        'heex',
+        'tsx',
+        'typescript',
+        'vimdoc',
+        'vim',
+        'gleam',
+        'erlang',
+        'zig',
+        'glsl',
+        'fennel',
+        'templ'
+      },
+    },
+    config = function(_, opts)
+      -- install parsers from custom opts.ensure_installed
+      if opts.ensure_installed and #opts.ensure_installed > 0 then
+        require("nvim-treesitter").install(opts.ensure_installed)
+        -- register and start parsers for filetypes
+        for _, parser in ipairs(opts.ensure_installed) do
+          local filetypes = parser -- In this case, parser is the filetype/language name
+          vim.treesitter.language.register(parser, filetypes)
+
+          vim.api.nvim_create_autocmd({ "FileType" }, {
+            pattern = filetypes,
+            callback = function(event)
+              vim.treesitter.start(event.buf, parser)
+            end,
+          })
+        end
+      end
+
+      -- Auto-install and start parsers for any buffer
+      vim.api.nvim_create_autocmd({ "BufRead" }, {
+        callback = function(event)
+          local bufnr = event.buf
+          local filetype = vim.api.nvim_get_option_value("filetype", { buf = bufnr })
+
+          -- Skip if no filetype
+          if filetype == "" then
+            return
+          end
+
+          -- Check if this filetype is already handled by explicit opts.ensure_installed config
+          for _, filetypes in pairs(opts.ensure_installed) do
+            local ft_table = type(filetypes) == "table" and filetypes or { filetypes }
+            if vim.tbl_contains(ft_table, filetype) then
+              return -- Already handled above
+            end
+          end
+
+          -- Get parser name based on filetype
+          local parser_name = vim.treesitter.language.get_lang(filetype) -- might return filetype (not helpful)
+          if not parser_name then
+            return
+          end
+          -- Try to get existing parser (helpful check if filetype was returned above)
+          local parser_configs = require("nvim-treesitter.parsers")
+          if not parser_configs[parser_name] then
+            return -- Parser not available, skip silently
+          end
+
+          local parser_installed = pcall(vim.treesitter.get_parser, bufnr, parser_name)
+          if parser_installed then
+            -- Start treesitter for this buffer
+            vim.treesitter.start(bufnr, parser_name)
+          end
+        end,
+      })
+    end,
+
+
   },
 
   -- NOTE: Next Step on Your Neovim Journey: Add/Configure additional "plugins" for kickstart
@@ -378,39 +465,17 @@ vim.keymap.set('n', '<leader>sw', require('telescope.builtin').grep_string, { de
 vim.keymap.set('n', '<leader>sg', require('telescope.builtin').live_grep, { desc = '[S]earch by [G]rep' })
 vim.keymap.set('n', '<leader>sd', require('telescope.builtin').diagnostics, { desc = '[S]earch [D]iagnostics' })
 
+
 -- [[ Configure Treesitter ]]
 -- See `:help nvim-treesitter`
-require('nvim-treesitter.configs').setup {
-  -- Add languages to be installed here that you want installed for treesitter
-  ensure_installed = {
-    'c',
-    'cpp',
-    'go',
-    'lua',
-    'python',
-    'rust',
-    'commonlisp',
-    'c_sharp',
-    'javascript',
-    'elixir',
-    'eex',
-    'heex',
-    'tsx',
-    'typescript',
-    'vimdoc',
-    'vim',
-    'gleam',
-    'erlang',
-    'zig',
-    'glsl',
-    'fennel',
-    'templ'
-  },
-
+require('nvim-treesitter.config').setup {
   -- Autoinstall languages that are not installed. Defaults to false (but you can change for yourself!)
-  auto_install = false,
+  auto_install = true,
 
-  highlight = { enable = true },
+  highlight = {
+    enable = true,
+    additional_vim_regex_highlighting = false,
+  },
   indent = { enable = true },
   incremental_selection = {
     enable = true,
@@ -592,13 +657,21 @@ mason_lspconfig.setup {
 
 mason_lspconfig.setup_handlers {
   function(server_name)
-    require('lspconfig')[server_name].setup {
+    vim.lsp.config(server_name, {
       capabilities = capabilities,
       on_attach = on_attach,
-      settings = servers[server_name],
-    }
+      settings = server_settings,
+    })
   end,
 }
+
+require("telescope").setup({
+  defaults = {
+    preview = {
+      treesitter = false,
+    },
+  },
+})
 
 -- [[ Configure nvim-cmp ]]
 -- See `:help cmp`
@@ -686,18 +759,6 @@ vim.cmd('set clipboard+=unnamedplus')
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
 
-local parser_config = require "nvim-treesitter.parsers".get_parser_configs()
-parser_config.fsharp = {
-  install_info = {
-    url = "https://github.com/Nsidorenco/tree-sitter-fsharp",
-    branch = "develop",
-    files = {"src/scanner.cc", "src/parser.c" },
-    generate_requires_npm = true,
-    requires_generate_from_grammar = true
-  },
-  filetype = "fsharp",
-}
-
 vim.api.nvim_create_autocmd({"BufRead", "BufNewFile"}, {
   pattern = {"*.fs"},
   command = "set filetype=fsharp"
@@ -717,3 +778,4 @@ vim.api.nvim_create_autocmd("BufWritePre", {
     vim.cmd([[silent! lua vim.lsp.buf.format()]])
   end,
 })
+
