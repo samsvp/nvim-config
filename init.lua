@@ -339,8 +339,6 @@ require('lazy').setup({
         end,
       })
     end,
-
-
   },
 
   -- NOTE: Next Step on Your Neovim Journey: Add/Configure additional "plugins" for kickstart
@@ -660,8 +658,11 @@ mason_lspconfig.setup_handlers {
     vim.lsp.config(server_name, {
       capabilities = capabilities,
       on_attach = on_attach,
-      settings = server_settings,
+      settings = servers[server_name],
+      filetypes = (servers[server_name] or {}).filetypes,
     })
+
+    vim.lsp.enable(server_name)
   end,
 }
 
