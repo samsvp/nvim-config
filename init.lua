@@ -65,6 +65,8 @@ vim.o.expandtab = true -- Pressing the TAB key will insert spaces instead of a T
 vim.o.softtabstop = 4 -- Number of spaces inserted instead of a TAB character
 vim.o.shiftwidth = 4 -- Number of spaces inserted when indenting
 
+vim.env.PATH = vim.fn.stdpath("data") .. "/mason/bin:" .. vim.env.PATH
+
 -- NOTE: Here is where you install your plugins.
 --  You can configure plugins using the `config` key.
 --
@@ -386,9 +388,11 @@ require('nvim-treesitter.configs').setup {
     'c',
     'cpp',
     'go',
+    'gdscript',
     'lua',
     'python',
     'rust',
+    'clojure',
     'commonlisp',
     'c_sharp',
     'javascript',
@@ -527,7 +531,7 @@ local on_attach = function(_, bufnr)
 
   nmap('gd', vim.lsp.buf.definition, '[G]oto [D]efinition')
   nmap('gr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
-  nmap('gI', vim.lsp.buf.implementation, '[G]oto [I]mplementation')
+  nmap('gi', vim.lsp.buf.implementation, '[G]oto [I]mplementation')
   nmap('<leader>D', vim.lsp.buf.type_definition, 'Type [D]efinition')
   nmap('<leader>ds', require('telescope.builtin').lsp_document_symbols, '[D]ocument [S]ymbols')
   nmap('<leader>ws', require('telescope.builtin').lsp_dynamic_workspace_symbols, '[W]orkspace [S]ymbols')
@@ -715,5 +719,131 @@ vim.api.nvim_create_autocmd("BufWritePre", {
   pattern = "*.go",
   callback = function()
     vim.cmd([[silent! lua vim.lsp.buf.format()]])
+  end,
+})
+
+-- Godot
+local paths_to_check = {'/', '/../'}
+local is_godot_project = false
+local godot_project_path = ''
+local cwd = vim.fn.getcwd()
+
+for _key, value in pairs(paths_to_check) do
+    if vim.uv.fs_stat(cwd .. value .. 'project.godot') then
+        is_godot_project = true
+        godot_project_path = cwd .. value
+        break
+    end
+end
+
+local is_server_running = vim.uv.fs_stat(godot_project_path .. '/server.pipe')
+if is_godot_project and not is_server_running then
+    vim.fn.serverstart(godot_project_path .. '/server.pipe')
+end
+
+local lspconfig = require('lspconfig')
+
+-- godot lsp
+if is_godot_project then
+    lspconfig.gdscript.setup {}
+end
+
+vim.filetype.add({
+  extension = { long = 'long' },
+})
+
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "long",
+  callback = function()
+    -- no spell squiggles: identifiers are not prose
+    vim.opt_local.spell = false
+
+    vim.schedule(function()  -- defer until after syntax.vim runs
+      local syn = vim.cmd
+
+      syn [[syntax keyword longKeyword     do end in self]]
+      -- nextgroup: a keyword beats a match at the same position, so the name
+      -- after `fun` / `import` has to be handed over rather than re-matched.
+      syn [[syntax keyword longFunKeyword fun    nextgroup=longFunction skipwhite]]
+      syn [[syntax keyword longConditional if else match when]]
+      syn [[syntax keyword longRepeat      for while map mapf reduce]]
+      syn [[syntax keyword longOperatorWord and or not]]
+      syn [[syntax keyword longBuiltin     list hashmap record tuple]]
+      syn [[syntax keyword longBoolean     true false]]
+      syn [[syntax keyword longNil         nil]]
+      syn [[syntax keyword longImport      import nextgroup=longModule   skipwhite]]
+
+      syn [[syntax region longString start=/"/ end=/"/ skip=/\\./]]
+
+      syn [[syntax match longNumber "\v<\d+(\.\d+)?>"]]
+
+      -- clause bar: a leading | that is not the |> operator
+      syn [[syntax match longClause  "\v^\s*\zs\|\ze[^>]"]]
+      syn [[syntax match longRest    "\v\.\."]]
+      syn [[syntax match longHashmap "\v\%\ze\{"]]
+
+      syn [[syntax match longAssign "="]]
+      syn [[syntax match longOperator "\v\|\>|\=\=|\!\=|\>\=|\<\=|::|[-+*/<>]"]]
+
+      -- m1::var  -- the module qualifier
+      syn [[syntax match longModuleRef "\v\k+\ze::"]]
+
+      syn [[syntax match longFunctionCall "\v\k+\ze\s*\("]]
+      syn [[syntax match longFieldAccess  "\v\.\zs\k+"]]
+
+      -- record / hashmap keys: name before a colon. `[^:]` keeps m1::var out of it,
+      -- and the alpha start keeps numeric hashmap keys as numbers.
+      syn [[syntax match longKey "\v<[[:alpha:]_]\k*\ze\s*:[^:]"]]
+      -- the dict colon, same colour as the key. not preceded or followed by
+      -- another colon, so the m1::var accessor is left to longOperator.
+      syn [[syntax match longKey "\v:@<!:[^:]@="]]
+
+      syn [[syntax match longFunction "\v\k+" contained]]
+      syn [[syntax match longModule   "\v\k+" contained]]
+
+      -- rainbow delimiters: (), [] and {} share one depth counter, so level N of any
+      -- kind contains level N+1 of every kind.
+      local nest = "longString,longNumber,longKeyword,longFunKeyword,longConditional," ..
+        "longRepeat,longOperatorWord,longOperator,longBuiltin,longBoolean,longNil," ..
+        "longImport,longClause,longRest,longHashmap,longFunctionCall,longFieldAccess," ..
+        "longModuleRef,longKey,longAssign"
+      local delims = { { "longParen", "(", ")" }, { "longBracket", "\\[", "\\]" }, { "longBrace", "{", "}" } }
+      for lvl = 0, 2 do
+        local nxt = (lvl + 1) % 3
+        local inner = string.format("longParen%d,longBracket%d,longBrace%d", nxt, nxt, nxt)
+        for _, d in ipairs(delims) do
+          syn(string.format(
+            [[syntax region %s%d matchgroup=longDelim%d start="%s" end="%s" contains=%s,%s]],
+            d[1], lvl, lvl, d[2], d[3], inner, nest))
+        end
+      end
+
+      syn [[highlight longDelim0 guifg=#e5c07b]]
+      syn [[highlight longDelim1 guifg=#56b6c2]]
+      syn [[highlight longDelim2 guifg=#e06c75]]
+
+      syn [[highlight link longKeyword      Keyword]]
+      syn [[highlight link longFunKeyword   Keyword]]
+      syn [[highlight longConditional guifg=#d19a66]]
+      syn [[highlight link longRepeat       Repeat]]
+      syn [[highlight link longOperatorWord Operator]]
+      syn [[highlight longOperator guifg=#c678dd]]
+      syn [[highlight link longBuiltin      Type]]
+      syn [[highlight link longBoolean      Boolean]]
+      syn [[highlight link longNil          Constant]]
+      syn [[highlight link longImport       PreProc]]
+      syn [[highlight link longModule       Type]]
+      syn [[highlight link longModuleRef    Type]]
+      syn [[highlight link longString       String]]
+      syn [[highlight link longNumber       Number]]
+      syn [[highlight link longFunction     Function]]
+      syn [[highlight link longFunctionCall Function]]
+      syn [[highlight link longFieldAccess  Identifier]]
+      syn [[highlight longKey guifg=#ff5ef1]]
+      syn [[highlight longAssign guifg=#c678dd]]
+      syn [[highlight link longClause       Statement]]
+      syn [[highlight link longRest         Special]]
+      syn [[highlight link longHashmap      Delimiter]]
+    end)
   end,
 })
