@@ -824,7 +824,7 @@ vim.api.nvim_create_autocmd("FileType", {
 
       syn [[highlight link longKeyword      Keyword]]
       syn [[highlight link longFunKeyword   Keyword]]
-      syn [[highlight longConditional guifg=#d19a66]]
+      syn [[highlight link longConditional Keyword]]
       syn [[highlight link longRepeat       Repeat]]
       syn [[highlight link longOperatorWord Operator]]
       syn [[highlight longOperator guifg=#c678dd]]
