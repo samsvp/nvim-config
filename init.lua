@@ -757,6 +757,9 @@ vim.api.nvim_create_autocmd("FileType", {
   callback = function()
     -- no spell squiggles: identifiers are not prose
     vim.opt_local.spell = false
+    -- so `gc` and formatting know what a comment looks like
+    vim.opt_local.commentstring = "# %s"
+    vim.opt_local.comments = ":#"
 
     vim.schedule(function()  -- defer until after syntax.vim runs
       local syn = vim.cmd
@@ -766,12 +769,16 @@ vim.api.nvim_create_autocmd("FileType", {
       -- after `fun` / `import` has to be handed over rather than re-matched.
       syn [[syntax keyword longFunKeyword fun    nextgroup=longFunction skipwhite]]
       syn [[syntax keyword longConditional if else match when]]
-      syn [[syntax keyword longRepeat      for while map mapf reduce]]
+      syn [[syntax keyword longRepeat      for while map mapf]]
       syn [[syntax keyword longOperatorWord and or not]]
       syn [[syntax keyword longBuiltin     list hashmap record tuple]]
       syn [[syntax keyword longBoolean     true false]]
       syn [[syntax keyword longNil         nil]]
       syn [[syntax keyword longImport      import nextgroup=longModule   skipwhite]]
+
+      -- comments: `#` to end of line. A `#` inside "..." stays a string, since
+      -- the region began earlier; a `"` after `#` is swallowed by the comment.
+      syn [[syntax match longComment "#.*$"]]
 
       syn [[syntax region longString start=/"/ end=/"/ skip=/\\./]]
 
@@ -798,6 +805,10 @@ vim.api.nvim_create_autocmd("FileType", {
       -- another colon, so the m1::var accessor is left to longOperator.
       syn [[syntax match longKey "\v:@<!:[^:]@="]]
 
+      -- atoms: a colon glued to a name. defined after longKey so `:k` in `%{:k: 1}`
+      -- is the atom rather than the dict colon; `:@<!` leaves m1::var alone.
+      syn [[syntax match longAtom "\v:@<!:[[:alpha:]_]\k*"]]
+
       syn [[syntax match longFunction "\v\k+" contained]]
       syn [[syntax match longModule   "\v\k+" contained]]
 
@@ -806,7 +817,7 @@ vim.api.nvim_create_autocmd("FileType", {
       local nest = "longString,longNumber,longKeyword,longFunKeyword,longConditional," ..
         "longRepeat,longOperatorWord,longOperator,longBuiltin,longBoolean,longNil," ..
         "longImport,longClause,longRest,longHashmap,longFunctionCall,longFieldAccess," ..
-        "longModuleRef,longKey,longAssign"
+        "longModuleRef,longKey,longAssign,longAtom,longComment"
       local delims = { { "longParen", "(", ")" }, { "longBracket", "\\[", "\\]" }, { "longBrace", "{", "}" } }
       for lvl = 0, 2 do
         local nxt = (lvl + 1) % 3
@@ -824,8 +835,8 @@ vim.api.nvim_create_autocmd("FileType", {
 
       syn [[highlight link longKeyword      Keyword]]
       syn [[highlight link longFunKeyword   Keyword]]
-      syn [[highlight link longConditional Keyword]]
-      syn [[highlight link longRepeat       Repeat]]
+      syn [[highlight link longConditional  Keyword]]
+      syn [[highlight link longRepeat       Keyword]]
       syn [[highlight link longOperatorWord Operator]]
       syn [[highlight longOperator guifg=#c678dd]]
       syn [[highlight link longBuiltin      Type]]
@@ -835,12 +846,14 @@ vim.api.nvim_create_autocmd("FileType", {
       syn [[highlight link longModule       Type]]
       syn [[highlight link longModuleRef    Type]]
       syn [[highlight link longString       String]]
+      syn [[highlight link longComment      Comment]]
       syn [[highlight link longNumber       Number]]
       syn [[highlight link longFunction     Function]]
       syn [[highlight link longFunctionCall Function]]
       syn [[highlight link longFieldAccess  Identifier]]
-      syn [[highlight longKey guifg=#ff5ef1]]
-      syn [[highlight longAssign guifg=#c678dd]]
+      syn [[highlight link longKey Constant]]
+      syn [[highlight link longAtom Constant]]
+      syn [[highlight link longAssign Constant]]
       syn [[highlight link longClause       Statement]]
       syn [[highlight link longRest         Special]]
       syn [[highlight link longHashmap      Delimiter]]
